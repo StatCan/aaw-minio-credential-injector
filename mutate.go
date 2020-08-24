@@ -179,7 +179,7 @@ export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 			Status: metav1.StatusSuccess,
 		}
 	} else {
-		log.Printf("Notebook name not found for %s/%s or namespace is invalid", pod.Namespace, pod.Name)
+		log.Printf("Notebook name not found for %s/%s", pod.Namespace, pod.Name)
 	}
 	
 	return response, nil
