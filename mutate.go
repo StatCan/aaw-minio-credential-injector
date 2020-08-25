@@ -31,11 +31,9 @@ func mutate(request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error)
 
 	log.Printf("Check pod for notebook name %s/%s", pod.Namespace, pod.Name)
 
-	// Check for a notebook name label: limited namespace test
-	profile := cleanName(pod.Namespace)
-
+	// Only inject Minio credentials into notebook pods (condition: has notebook-name label)
 	isNotebook := false
-	if _, ok := pod.ObjectMeta.Labels["notebook-name"]; ok && (profile == "frances-zsurka" || profile == "yolo") {
+	if _, ok := pod.ObjectMeta.Labels["notebook-name"]; ok {
 		isNotebook = true
 	}
 
@@ -181,7 +179,7 @@ export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 			Status: metav1.StatusSuccess,
 		}
 	} else {
-		log.Printf("Notebook name not found for %s/%s or namespace is invalid", pod.Namespace, pod.Name)
+		log.Printf("Notebook name not found for %s/%s", pod.Namespace, pod.Name)
 	}
 	
 	return response, nil
