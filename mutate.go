@@ -97,7 +97,7 @@ export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-minimal-tenant1.json",
 				"value": fmt.Sprintf(`
 {{- with secret "minio_minimal_tenant1/keys/%s" }}
-{"MINIO_URL"="http://minimal-tenant1-minio.minio:9000","MINIO_ACCESS_KEY"="{{ .Data.accessKeyId }}","MINIO_SECRET_KEY"="{{ .Data.secretAccessKey }}"}
+{"MINIO_URL":"http://minimal-tenant1-minio.minio:9000","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}"}
 {{- end }}
 						`, roleName),
 			},
@@ -131,7 +131,7 @@ export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-pachyderm-tenant1.json",
 				"value": fmt.Sprintf(`
 {{- with secret "minio_pachyderm_tenant1/keys/%s" }}
-{"MINIO_URL"="http://pachyderm-tenant1-minio.minio:9000","MINIO_ACCESS_KEY"="{{ .Data.accessKeyId }}","MINIO_SECRET_KEY"="{{ .Data.secretAccessKey }}"}
+{"MINIO_URL":"http://pachyderm-tenant1-minio.minio:9000","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}"}
 {{- end }}
 						`, roleName),
 			},
@@ -165,7 +165,7 @@ export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-premium-tenant1.json",
 				"value": fmt.Sprintf(`
 {{- with secret "minio_premium_tenant1/keys/%s" }}
-{"MINIO_URL"="http://premium-tenant1-minio.minio:9000","MINIO_ACCESS_KEY"="{{ .Data.accessKeyId }}","MINIO_SECRET_KEY"="{{ .Data.secretAccessKey }}"}
+{"MINIO_URL":"http://premium-tenant1-minio.minio:9000","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}"}
 {{- end }}
 						`, roleName),
 			},
