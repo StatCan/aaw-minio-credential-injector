@@ -82,6 +82,8 @@ func mutate(request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error)
 export MINIO_URL="http://minimal-tenant1-minio.minio:9000"
 export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
 export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
+
+mc version > /dev/null 2>&1 && mc config host add minimal $MINIO_URL $MINIO_ACCESS_KEY $MINIO_SECRET_KEY || true
 {{- end }}
 						`, roleName),
 			},
@@ -116,6 +118,8 @@ export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 export MINIO_URL="http://pachyderm-tenant1-minio.minio:9000"
 export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
 export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
+
+mc version > /dev/null 2>&1 && mc config host add pachyderm $MINIO_URL $MINIO_ACCESS_KEY $MINIO_SECRET_KEY || true
 {{- end }}
 						`, roleName),
 			},
@@ -150,6 +154,8 @@ export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 export MINIO_URL="http://premium-tenant1-minio.minio:9000"
 export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
 export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
+
+mc version > /dev/null 2>&1 && mc config host add premium $MINIO_URL $MINIO_ACCESS_KEY $MINIO_SECRET_KEY || true
 {{- end }}
 						`, roleName),
 			},
