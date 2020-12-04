@@ -187,7 +187,7 @@ export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-premium-tenant-1",
 				"value": fmt.Sprintf(`
 			{{- with secret "minio_premium_tenant_1/keys/%s" }}
-			export MINIO_URL="http://premium-tenant-1-minio.minio:9000"
+			export MINIO_URL="http://minio.minio-standard-premium-1/"
 			export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
 			export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 			export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
@@ -207,7 +207,7 @@ export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-premium-tenant-1.json",
 				"value": fmt.Sprintf(`
 			{{- with secret "minio_premium_tenant_1/keys/%s" }}
-			{"MINIO_URL":"http://premium-tenant-1-minio.minio:9000","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
+			{"MINIO_URL":"http://minio.minio-premium-tenant-1/","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
 			{{- end }}
 						`, roleName),
 			},
@@ -223,7 +223,7 @@ export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-standard-tenant-1",
 				"value": fmt.Sprintf(`
 			{{- with secret "minio_standard_tenant_1/keys/%s" }}
-			export MINIO_URL="http://standard-tenant-1-minio.minio:9000"
+			export MINIO_URL="http://minio.minio-standard-tenant-1"
 			export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
 			export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 			export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
@@ -243,7 +243,7 @@ export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-standard-tenant-1.json",
 				"value": fmt.Sprintf(`
 			{{- with secret "minio_standard_tenant_1/keys/%s" }}
-			{"MINIO_URL":"http://standard-tenant-1-minio.minio:9000","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
+			{"MINIO_URL":"http://minio.minio-standard-tenant-1","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
 			{{- end }}
 						`, roleName),
 			},
