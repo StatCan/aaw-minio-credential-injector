@@ -31,13 +31,19 @@ func mutate(request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error)
 
 	log.Printf("Check pod for notebook name %s/%s", pod.Namespace, pod.Name)
 
-	// Only inject Minio credentials into notebook pods (condition: has notebook-name label)
+	// Inject Minio credentials into notebook pods (condition: has notebook-name label)
 	isNotebook := false
 	if _, ok := pod.ObjectMeta.Labels["notebook-name"]; ok {
 		isNotebook = true
 	}
 
-	if isNotebook {
+	// Inject Minio credentials into argo workflow pods (condition: has workflows.argoproj.io/workflow label)
+	isWorkflow := false
+	if _, ok := pod.ObjectMeta.Labels["workflows.argoproj.io/workflow"]; ok {
+		isWorkflow = true
+	}
+
+	if isNotebook || isWorkflow {
 		log.Printf("Found notebook name for %s/%s", pod.Namespace, pod.Name)
 
 		patch := v1beta1.PatchTypeJSONPatch
