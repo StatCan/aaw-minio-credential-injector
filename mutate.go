@@ -29,17 +29,22 @@ func mutate(request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error)
 		return response, fmt.Errorf("unable to decode Pod %w", err)
 	}
 
-	log.Printf("Check pod for notebook name %s/%s", pod.Namespace, pod.Name)
+	log.Printf("Check pod for notebook or workflow %s/%s", pod.Namespace, pod.Name)
 
-	// Only inject Minio credentials into notebook pods (condition: has notebook-name label)
-	isNotebook := false
+	// Inject Minio credentials into notebook pods (condition: has notebook-name label)
+	shouldInject := false
 	if _, ok := pod.ObjectMeta.Labels["notebook-name"]; ok {
-		isNotebook = true
+		log.Printf("Found notebook name for %s/%s", pod.Namespace, pod.Name)
+		shouldInject = true
 	}
 
-	if isNotebook {
-		log.Printf("Found notebook name for %s/%s", pod.Namespace, pod.Name)
+	// Inject Minio credentials into argo workflow pods (condition: has workflows.argoproj.io/workflow label)
+	if _, ok := pod.ObjectMeta.Labels["workflows.argoproj.io/workflow"]; ok {
+		log.Printf("Found argo workflow name for %s/%s", pod.Namespace, pod.Name)
+		shouldInject = true
+	}
 
+	if shouldInject {
 		patch := v1beta1.PatchTypeJSONPatch
 		response.PatchType = &patch
 
