@@ -192,7 +192,7 @@ export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-premium-tenant-1",
 				"value": fmt.Sprintf(`
 			{{- with secret "minio_premium_tenant_1/keys/%s" }}
-			export MINIO_URL="http://minio.minio-standard-premium-1"
+			export MINIO_URL="http://minio.minio-premium-tenant-1"
 			export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
 			export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 			export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
