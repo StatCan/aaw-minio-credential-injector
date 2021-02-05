@@ -46,7 +46,7 @@ func mutate(request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error)
 
 	// Inject Minio credentials into pod requesting credentials (condition: has add-default-minio-creds annotation)
 	if _, ok := pod.ObjectMeta.Annotations["add-default-minio-creds"]; ok {
-		log.Printf("Found pod requesting default minio credentials %s/%s", pod.Namespace, pod.Name)
+		log.Printf("Found minio credential annotation on %s/%s", pod.Namespace, pod.Name)
 		shouldInject = true
 	}
 
