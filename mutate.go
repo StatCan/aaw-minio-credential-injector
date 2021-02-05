@@ -31,8 +31,8 @@ func mutate(request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error)
 
 	log.Printf("Check pod for notebook or workflow %s/%s", pod.Namespace, pod.Name)
 
-	// Inject Minio credentials into notebook pods (condition: has notebook-name label)
 	shouldInject := false
+	// Inject Minio credentials into notebook pods (condition: has notebook-name label)
 	if _, ok := pod.ObjectMeta.Labels["notebook-name"]; ok {
 		log.Printf("Found notebook name for %s/%s", pod.Namespace, pod.Name)
 		shouldInject = true
@@ -43,6 +43,13 @@ func mutate(request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error)
 		log.Printf("Found argo workflow name for %s/%s", pod.Namespace, pod.Name)
 		shouldInject = true
 	}
+
+	// Inject Minio credentials into pod requesting credentials (condition: has add-default-minio-creds annotation)
+	if _, ok := pod.ObjectMeta.Annotations["data.statcan.gc.ca/inject-minio-creds"]; ok {
+		log.Printf("Found minio credential annotation on %s/%s", pod.Namespace, pod.Name)
+		shouldInject = true
+	}
+
 
 	if shouldInject {
 		patch := v1beta1.PatchTypeJSONPatch
