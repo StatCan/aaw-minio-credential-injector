@@ -40,7 +40,10 @@ func handleMutate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := mutate(*admissionReview.Request)
+	response, err := mutate(*admissionReview.Request, map[string][]string{
+		"unclassified": []string{"minio_standard", "minio_premium"},
+		"protected-b": []string{"minio_protected_b"},
+	})
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)

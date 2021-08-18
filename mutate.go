@@ -15,7 +15,7 @@ func cleanName(name string) string {
 	return strings.ReplaceAll(name, "_", "-")
 }
 
-func mutate(request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error) {
+func mutate(request v1beta1.AdmissionRequest, instances map[string][]string) (v1beta1.AdmissionResponse, error) {
 	response := v1beta1.AdmissionResponse{}
 
 	// Default response
@@ -50,6 +50,11 @@ func mutate(request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error)
 		shouldInject = true
 	}
 
+	// Identify the data classification of the pod, defaulting to unclassified if unset
+	dataClassification := "unclassified"
+	if val, ok := pod.ObjectMeta.Labels["data.statcan.gc.ca/classification"]; ok {
+		dataClassification = val
+	}
 
 	if shouldInject {
 		patch := v1beta1.PatchTypeJSONPatch
@@ -79,187 +84,42 @@ func mutate(request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error)
 				"path":  "/metadata/annotations/vault.hashicorp.com~1role",
 				"value": roleName,
 			},
-
-			{
-				"op":    "add",
-				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-minio-minimal-tenant1",
-				"value": "minio_minimal_tenant1/keys/" + roleName,
-			},
-
-			{
-				"op":   "add",
-				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-minimal-tenant1",
-				"value": fmt.Sprintf(`
-{{- with secret "minio_minimal_tenant1/keys/%s" }}
-export MINIO_URL="http://minimal-tenant1-minio.minio:9000"
-export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
-export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
-export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
-export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
-{{- end }}
-						`, roleName),
-			},
-
-			{
-				"op":    "add",
-				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-minio-minimal-tenant1.json",
-				"value": "minio_minimal_tenant1/keys/" + roleName,
-			},
-
-			{
-				"op":   "add",
-				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-minimal-tenant1.json",
-				"value": fmt.Sprintf(`
-{{- with secret "minio_minimal_tenant1/keys/%s" }}
-{"MINIO_URL":"http://minimal-tenant1-minio.minio:9000","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
-{{- end }}
-						`, roleName),
-			},
-
-			{
-				"op":    "add",
-				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-minio-pachyderm-tenant1",
-				"value": "minio_pachyderm_tenant1/keys/" + roleName,
-			},
-
-			{
-				"op":   "add",
-				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-pachyderm-tenant1",
-				"value": fmt.Sprintf(`
-{{- with secret "minio_pachyderm_tenant1/keys/%s" }}
-export MINIO_URL="http://pachyderm-tenant1-minio.minio:9000"
-export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
-export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
-export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
-export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
-{{- end }}
-						`, roleName),
-			},
-
-			{
-				"op":    "add",
-				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-minio-pachyderm-tenant1.json",
-				"value": "minio_pachyderm_tenant1/keys/" + roleName,
-			},
-
-			{
-				"op":   "add",
-				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-pachyderm-tenant1.json",
-				"value": fmt.Sprintf(`
-{{- with secret "minio_pachyderm_tenant1/keys/%s" }}
-{"MINIO_URL":"http://pachyderm-tenant1-minio.minio:9000","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
-{{- end }}
-						`, roleName),
-			},
-
-			{
-				"op":    "add",
-				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-minio-premium-tenant1",
-				"value": "minio_premium_tenant1/keys/" + roleName,
-			},
-
-			{
-				"op":   "add",
-				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-premium-tenant1",
-				"value": fmt.Sprintf(`
-{{- with secret "minio_premium_tenant1/keys/%s" }}
-export MINIO_URL="http://premium-tenant1-minio.minio:9000"
-export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
-export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
-export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
-export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
-{{- end }}
-						`, roleName),
-			},
-
-			{
-				"op":    "add",
-				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-minio-premium-tenant1.json",
-				"value": "minio_premium_tenant1/keys/" + roleName,
-			},
-
-			{
-				"op":   "add",
-				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-premium-tenant1.json",
-				"value": fmt.Sprintf(`
-{{- with secret "minio_premium_tenant1/keys/%s" }}
-{"MINIO_URL":"http://premium-tenant1-minio.minio:9000","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
-{{- end }}
-						`, roleName),
-			},
-
-			{
-				"op":    "add",
-				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-minio-premium-tenant-1",
-				"value": "minio_premium_tenant_1/keys/" + roleName,
-			},
-
-			{
-				"op":   "add",
-				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-premium-tenant-1",
-				"value": fmt.Sprintf(`
-			{{- with secret "minio_premium_tenant_1/keys/%s" }}
-			export MINIO_URL="http://minio.minio-premium-tenant-1"
-			export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
-			export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
-			export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
-			export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
-			{{- end }}
-						`, roleName),
-			},
-
-			{
-				"op":    "add",
-				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-minio-premium-tenant-1.json",
-				"value": "minio_premium_tenant_1/keys/" + roleName,
-			},
-
-			{
-				"op":   "add",
-				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-premium-tenant-1.json",
-				"value": fmt.Sprintf(`
-			{{- with secret "minio_premium_tenant_1/keys/%s" }}
-			{"MINIO_URL":"http://minio.minio-premium-tenant-1","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
-			{{- end }}
-						`, roleName),
-			},
-
-			{
-				"op":    "add",
-				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-minio-standard-tenant-1",
-				"value": "minio_standard_tenant_1/keys/" + roleName,
-			},
-
-			{
-				"op":   "add",
-				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-standard-tenant-1",
-				"value": fmt.Sprintf(`
-			{{- with secret "minio_standard_tenant_1/keys/%s" }}
-			export MINIO_URL="http://minio.minio-standard-tenant-1"
-			export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
-			export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
-			export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
-			export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
-			{{- end }}
-						`, roleName),
-			},
-
-			{
-				"op":    "add",
-				"path":  "/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-minio-standard-tenant-1.json",
-				"value": "minio_standard_tenant_1/keys/" + roleName,
-			},
-
-			{
-				"op":   "add",
-				"path": "/metadata/annotations/vault.hashicorp.com~1agent-inject-template-minio-standard-tenant-1.json",
-				"value": fmt.Sprintf(`
-			{{- with secret "minio_standard_tenant_1/keys/%s" }}
-			{"MINIO_URL":"http://minio.minio-standard-tenant-1","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
-			{{- end }}
-						`, roleName),
-			},
 		}
+
+		for _, instance := range instances[dataClassification] {
+			instanceId := strings.ReplaceAll(instance, "_", "-")
+
+			patches = append(patches, map[string]interface{}{
+				"op": "add",
+				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-%s", instanceId),
+				"value": fmt.Sprintf("%s/keys/%s", instance, roleName),
+			})
+
+			patches = append(patches, map[string]interface{}{
+				"op": "add",
+				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-template-%s", instanceId),
+				"value": fmt.Sprintf(`
+{{- with secret "%s/keys/%s" }}
+export MINIO_URL="http://minio.%s-system"
+export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
+export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
+export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
+export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
+{{- end }}
+`, instance, roleName, instanceId),
+			})
+
+			patches = append(patches, map[string]interface{}{
+				"op": "add",
+				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-template-%s", instanceId),
+				"value": fmt.Sprintf(`
+{{- with secret "%s/keys/%s" }}
+{"MINIO_URL":"http://minio.%s-system","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
+{{- end }}
+`, instance, roleName, instanceId),
+			})
+		}
+
 		response.Patch, err = json.Marshal(patches)
 		if err != nil {
 			return response, err
