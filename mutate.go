@@ -100,7 +100,7 @@ func mutate(request v1beta1.AdmissionRequest, instances map[string][]string) (v1
 				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-template-%s", instanceId),
 				"value": fmt.Sprintf(`
 {{- with secret "%s/keys/%s" }}
-export MINIO_URL="http://minio.%s-system"
+export MINIO_URL="http://minio.%s-system:443"
 export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
 export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
@@ -111,10 +111,10 @@ export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 
 			patches = append(patches, map[string]interface{}{
 				"op": "add",
-				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-template-%s", instanceId),
+				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-template-%s.json", instanceId),
 				"value": fmt.Sprintf(`
 {{- with secret "%s/keys/%s" }}
-{"MINIO_URL":"http://minio.%s-system","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
+{"MINIO_URL":"http://minio.%s-system:443","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
 {{- end }}
 `, instance, roleName, instanceId),
 			})
