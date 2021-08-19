@@ -108,6 +108,12 @@ export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 {{- end }}
 `, instance, roleName, instanceId),
 			})
+			
+			patches = append(patches, map[string]interface{}{
+				"op": "add",
+				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-%s.json", instanceId),
+				"value": fmt.Sprintf("%s/keys/%s", instance, roleName),
+			})
 
 			patches = append(patches, map[string]interface{}{
 				"op": "add",
