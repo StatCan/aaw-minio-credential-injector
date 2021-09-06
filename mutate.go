@@ -64,7 +64,15 @@ func mutate(request v1beta1.AdmissionRequest, instances map[string][]string) (v1
 			"minio-admission-controller": "Added minio credentials",
 		}
 
-		roleName := cleanName("profile-" + pod.Namespace)
+		// Handle https://github.com/StatCan/aaw-minio-credential-injector/issues/10
+		var roleName string
+		if pod.Namespace != "" {
+			roleName = cleanName("profile-" + pod.Namespace)
+		} else if request.Namespace != "" {
+			roleName = cleanName("profile-" + request.Namespace)
+		} else {
+			return response, fmt.Errorf("pod and request namespace were empty. Cannot determine the namespace.")
+		}
 
 		patches := []map[string]interface{}{
 			{
