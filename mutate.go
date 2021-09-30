@@ -15,7 +15,30 @@ func cleanName(name string) string {
 	return strings.ReplaceAll(name, "_", "-")
 }
 
-func mutate(request v1beta1.AdmissionRequest, instances map[string][]string) (v1beta1.AdmissionResponse, error) {
+func shouldInject(pod *v1.Pod) bool {
+
+	// Inject Minio credentials into notebook pods (condition: has notebook-name label)
+	if _, ok := pod.ObjectMeta.Labels["notebook-name"]; ok {
+		log.Printf("Found notebook name for %s/%s; injecting", pod.Namespace, pod.Name)
+		return true
+	}
+
+	// Inject Minio credentials into argo workflow pods (condition: has workflows.argoproj.io/workflow label)
+	if _, ok := pod.ObjectMeta.Labels["workflows.argoproj.io/workflow"]; ok {
+		log.Printf("Found argo workflow name for %s/%s; injecting", pod.Namespace, pod.Name)
+		return true
+	}
+
+	// Inject Minio credentials into pod requesting credentials (condition: has add-default-minio-creds annotation)
+	if _, ok := pod.ObjectMeta.Annotations["data.statcan.gc.ca/inject-minio-creds"]; ok {
+		log.Printf("Found minio credential annotation on %s/%s; injecting", pod.Namespace, pod.Name)
+		return true
+	}
+
+	return false
+}
+
+func mutate(request v1beta1.AdmissionRequest, instances []Instance) (v1beta1.AdmissionResponse, error) {
 	response := v1beta1.AdmissionResponse{}
 
 	// Default response
@@ -29,34 +52,13 @@ func mutate(request v1beta1.AdmissionRequest, instances map[string][]string) (v1
 		return response, fmt.Errorf("unable to decode Pod %w", err)
 	}
 
-	log.Printf("Check pod for notebook or workflow %s/%s", pod.Namespace, pod.Name)
-
-	shouldInject := false
-	// Inject Minio credentials into notebook pods (condition: has notebook-name label)
-	if _, ok := pod.ObjectMeta.Labels["notebook-name"]; ok {
-		log.Printf("Found notebook name for %s/%s", pod.Namespace, pod.Name)
-		shouldInject = true
-	}
-
-	// Inject Minio credentials into argo workflow pods (condition: has workflows.argoproj.io/workflow label)
-	if _, ok := pod.ObjectMeta.Labels["workflows.argoproj.io/workflow"]; ok {
-		log.Printf("Found argo workflow name for %s/%s", pod.Namespace, pod.Name)
-		shouldInject = true
-	}
-
-	// Inject Minio credentials into pod requesting credentials (condition: has add-default-minio-creds annotation)
-	if _, ok := pod.ObjectMeta.Annotations["data.statcan.gc.ca/inject-minio-creds"]; ok {
-		log.Printf("Found minio credential annotation on %s/%s", pod.Namespace, pod.Name)
-		shouldInject = true
-	}
-
 	// Identify the data classification of the pod, defaulting to unclassified if unset
 	dataClassification := "unclassified"
 	if val, ok := pod.ObjectMeta.Labels["data.statcan.gc.ca/classification"]; ok {
 		dataClassification = val
 	}
 
-	if shouldInject {
+	if shouldInject(&pod) {
 		patch := v1beta1.PatchTypeJSONPatch
 		response.PatchType = &patch
 
@@ -64,7 +66,15 @@ func mutate(request v1beta1.AdmissionRequest, instances map[string][]string) (v1
 			"minio-admission-controller": "Added minio credentials",
 		}
 
-		roleName := cleanName("profile-" + pod.Namespace)
+		// Handle https://github.com/StatCan/aaw-minio-credential-injector/issues/10
+		var roleName string
+		if pod.Namespace != "" {
+			roleName = cleanName("profile-" + pod.Namespace)
+		} else if request.Namespace != "" {
+			roleName = cleanName("profile-" + request.Namespace)
+		} else {
+			return response, fmt.Errorf("pod and request namespace were empty. Cannot determine the namespace.")
+		}
 
 		patches := []map[string]interface{}{
 			{
@@ -86,43 +96,54 @@ func mutate(request v1beta1.AdmissionRequest, instances map[string][]string) (v1
 			},
 		}
 
-		for _, instance := range instances[dataClassification] {
-			instanceId := strings.ReplaceAll(instance, "_", "-")
+		for _, instance := range instances {
 
+			// Only apply to the relevant instances
+			if instance.Classification != dataClassification {
+				continue
+			}
+
+			instanceId := strings.ReplaceAll(instance.Name, "_", "-")
 			patches = append(patches, map[string]interface{}{
-				"op": "add",
-				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-%s", instanceId),
-				"value": fmt.Sprintf("%s/keys/%s", instance, roleName),
+				"op":    "add",
+				"path":  fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-%s", instanceId),
+				"value": fmt.Sprintf("%s/keys/%s", instance.Name, roleName),
 			})
 
 			patches = append(patches, map[string]interface{}{
-				"op": "add",
+				"op":   "add",
 				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-template-%s", instanceId),
 				"value": fmt.Sprintf(`
 {{- with secret "%s/keys/%s" }}
-export MINIO_URL="http://minio.%s-system:443"
+export MINIO_URL="%s"
 export MINIO_ACCESS_KEY="{{ .Data.accessKeyId }}"
 export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
 export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 {{- end }}
-`, instance, roleName, instanceId),
-			})
-			
-			patches = append(patches, map[string]interface{}{
-				"op": "add",
-				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-%s.json", instanceId),
-				"value": fmt.Sprintf("%s/keys/%s", instance, roleName),
+`, instance.Name, roleName, instance.ServiceUrl),
 			})
 
 			patches = append(patches, map[string]interface{}{
-				"op": "add",
+				"op":    "add",
+				"path":  fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-%s.json", instanceId),
+				"value": fmt.Sprintf("%s/keys/%s", instance.Name, roleName),
+			})
+
+			patches = append(patches, map[string]interface{}{
+				"op":   "add",
 				"path": fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-template-%s.json", instanceId),
 				"value": fmt.Sprintf(`
 {{- with secret "%s/keys/%s" }}
-{"MINIO_URL":"http://minio.%s-system:443","MINIO_ACCESS_KEY":"{{ .Data.accessKeyId }}","MINIO_SECRET_KEY":"{{ .Data.secretAccessKey }}","AWS_ACCESS_KEY_ID":"{{ .Data.accessKeyId }}","AWS_SECRET_ACCESS_KEY":"{{ .Data.secretAccessKey }}"}
+{
+	"MINIO_URL": "%s",
+	"MINIO_ACCESS_KEY": "{{ .Data.accessKeyId }}",
+	"MINIO_SECRET_KEY": "{{ .Data.secretAccessKey }}",
+	"AWS_ACCESS_KEY_ID": "{{ .Data.accessKeyId }}",
+	"AWS_SECRET_ACCESS_KEY": "{{ .Data.secretAccessKey }}"
+}
 {{- end }}
-`, instance, roleName, instanceId),
+`, instance.Name, roleName, instance.ServiceUrl),
 			})
 		}
 
@@ -135,7 +156,7 @@ export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 			Status: metav1.StatusSuccess,
 		}
 	} else {
-		log.Printf("Notebook name not found for %s/%s", pod.Namespace, pod.Name)
+		log.Printf("Not injecting the pod %s/%s", pod.Namespace, pod.Name)
 	}
 
 	return response, nil

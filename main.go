@@ -3,16 +3,31 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"k8s.io/api/admission/v1beta1"
 )
 
-// Based on https://medium.com/ovni/writing-a-very-basic-kubernetes-mutating-admission-webhook-398dbbcb63ec
+type Instance struct {
+	Name           string
+	Classification string
+	ServiceUrl     string
+}
 
+var instances []Instance
+var defaultInstances = `
+	{"name": "minio_standard", "classification": "unclassified", "serviceUrl": "http://minio.minio-standard-system:443"}
+	{"name": "minio_premium", "classification": "unclassified", "serviceUrl": "http://minio.minio-premium-system:443"}
+	{"name": "minio_protected_b", "classification": "protected-b", "serviceUrl": "http://minio.minio-protected-b-system:443"}
+`
+
+// Based on https://medium.com/ovni/writing-a-very-basic-kubernetes-mutating-admission-webhook-398dbbcb63ec
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, world!")
 }
@@ -40,10 +55,7 @@ func handleMutate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := mutate(*admissionReview.Request, map[string][]string{
-		"unclassified": []string{"minio_standard", "minio_premium"},
-		"protected-b": []string{"minio_protected_b"},
-	})
+	response, err := mutate(*admissionReview.Request, instances)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -66,7 +78,39 @@ func handleMutate(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
+// Sets the global instances variable
+func configInstances() {
+	var config string
+	if _, err := os.Stat("instances.json"); os.IsNotExist(err) {
+		config = defaultInstances
+	} else {
+		config_bytes, err := ioutil.ReadFile("instances.json") // just pass the file name
+		if err != nil {
+			log.Fatal(err)
+		}
+		config = string(config_bytes)
+	}
+
+	dec := json.NewDecoder(strings.NewReader(config))
+	for {
+		var instance Instance
+		err := dec.Decode(&instance)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Fatal(err)
+		}
+		fmt.Println(instance)
+		instances = append(instances, instance)
+	}
+}
+
 func main() {
+
+	// Configure the MinIO Instances
+	configInstances()
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", handleRoot)

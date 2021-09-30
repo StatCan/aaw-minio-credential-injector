@@ -137,7 +137,10 @@ func TestMutate(t *testing.T) {
 	err := json.Unmarshal([]byte(rawJSON), &review)
 	assert.NoError(t, err, "failed to unmarshal with error %q", err)
 
-	response, err := mutate(*review.Request)
+	// Set the instances
+	configInstances()
+
+	response, err := mutate(*review.Request, instances)
 	assert.NoError(t, err, "failed to mutate with error %q", err)
 
 	log.Println(response)
