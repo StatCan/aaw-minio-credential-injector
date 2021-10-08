@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"k8s.io/api/admission/v1beta1"
@@ -13,6 +14,20 @@ import (
 
 func cleanName(name string) string {
 	return strings.ReplaceAll(name, "_", "-")
+}
+
+func useExternalVault(pod *v1.Pod) (bool, string) {
+	if os.Getenv("VAULT_ADDR_HTTPS") == "" {
+		return false, ""
+	}
+
+	// if val, ok := pod.ObjectMeta.Labels["sidecar.istio.io/inject"]; ok && val == "false" {
+	if _, ok := pod.ObjectMeta.Labels["workflows.argoproj.io/workflow"]; ok {
+		log.Printf("Will use external Vault address for workflow %s", pod.Name)
+		return true, os.Getenv("VAULT_ADDR_HTTPS")
+	}
+
+	return false, ""
 }
 
 func shouldInject(pod *v1.Pod) bool {
@@ -94,6 +109,14 @@ func mutate(request v1beta1.AdmissionRequest, instances []Instance) (v1beta1.Adm
 				"path":  "/metadata/annotations/vault.hashicorp.com~1role",
 				"value": roleName,
 			},
+		}
+
+		if useExternal, vaultAddr := useExternalVault(&pod); useExternal {
+			patches = append(patches, map[string]interface{}{
+				"op":    "add",
+				"path":  fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1service"),
+				"value": vaultAddr,
+			})
 		}
 
 		for _, instance := range instances {
