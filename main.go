@@ -18,13 +18,14 @@ type Instance struct {
 	Name           string
 	Classification string
 	ServiceUrl     string
+	ExternalUrl    string
 }
 
 var instances []Instance
 var defaultInstances = `
-	{"name": "minio_standard", "classification": "unclassified", "serviceUrl": "http://minio.minio-standard-system:443"}
-	{"name": "minio_premium", "classification": "unclassified", "serviceUrl": "http://minio.minio-premium-system:443"}
-	{"name": "minio_protected_b", "classification": "protected-b", "serviceUrl": "http://minio.minio-protected-b-system:443"}
+	{"name": "minio_standard", "classification": "unclassified", "serviceUrl": "http://minio.minio-standard-system:443", "externalUrl": "https://minio-standard.aaw-dev.cloud.statcan.ca"}
+	{"name": "minio_premium", "classification": "unclassified", "serviceUrl": "http://minio.minio-premium-system:443", "externalUrl": "https://minio-premium.aaw-dev.cloud.statcan.ca"}
+	{"name": "minio_protected_b", "classification": "protected-b", "serviceUrl": "http://minio.minio-protected-b-system:443", "externalUrl": ""}
 `
 
 // Based on https://medium.com/ovni/writing-a-very-basic-kubernetes-mutating-admission-webhook-398dbbcb63ec

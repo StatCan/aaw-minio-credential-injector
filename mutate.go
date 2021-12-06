@@ -111,6 +111,7 @@ func mutate(request v1beta1.AdmissionRequest, instances []Instance) (v1beta1.Adm
 			},
 		}
 
+		var useExternal bool
 		if useExternal, vaultAddr := useExternalVault(&pod); useExternal {
 			patches = append(patches, map[string]interface{}{
 				"op":    "add",
@@ -124,6 +125,16 @@ func mutate(request v1beta1.AdmissionRequest, instances []Instance) (v1beta1.Adm
 			// Only apply to the relevant instances
 			if instance.Classification != dataClassification {
 				continue
+			} else if useExternal && instance.ExternalUrl == "" {
+				log.Printf("Not injecting the pod %s/%s with sensitive minio instance", pod.Namespace, pod.Name, instance.Name)
+				continue
+			}
+
+			var url string
+			if useExternal {
+				url = instance.ExternalUrl
+			} else {
+				url = instance.ServiceUrl
 			}
 
 			instanceId := strings.ReplaceAll(instance.Name, "_", "-")
@@ -144,7 +155,7 @@ export MINIO_SECRET_KEY="{{ .Data.secretAccessKey }}"
 export AWS_ACCESS_KEY_ID="{{ .Data.accessKeyId }}"
 export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 {{- end }}
-`, instance.Name, roleName, instance.ServiceUrl),
+`, instance.Name, roleName, url),
 			})
 
 			patches = append(patches, map[string]interface{}{
@@ -166,7 +177,7 @@ export AWS_SECRET_ACCESS_KEY="{{ .Data.secretAccessKey }}"
 	"AWS_SECRET_ACCESS_KEY": "{{ .Data.secretAccessKey }}"
 }
 {{- end }}
-`, instance.Name, roleName, instance.ServiceUrl),
+`, instance.Name, roleName, url),
 			})
 		}
 
