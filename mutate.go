@@ -120,6 +120,12 @@ func mutate(request v1beta1.AdmissionRequest, instances []Instance) (v1beta1.Adm
 			})
 		}
 
+		if useExternal {
+			log.Printf("Pod %s/%s will use external urls", pod.Namespace, pod.Name)
+		} else {
+			log.Printf("Pod %s/%s will use internal urls", pod.Namespace, pod.Name)
+		}
+
 		for _, instance := range instances {
 
 			// Only apply to the relevant instances
