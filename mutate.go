@@ -111,7 +111,6 @@ func mutate(request v1beta1.AdmissionRequest, instances []Instance) (v1beta1.Adm
 			},
 		}
 
-		var useExternal bool
 		if useExternal, vaultAddr := useExternalVault(&pod); useExternal {
 			patches = append(patches, map[string]interface{}{
 				"op":    "add",
@@ -120,6 +119,7 @@ func mutate(request v1beta1.AdmissionRequest, instances []Instance) (v1beta1.Adm
 			})
 		}
 
+		useExternal, _ := useExternalVault(&pod)
 		if useExternal {
 			log.Printf("Pod %s/%s will use external urls", pod.Namespace, pod.Name)
 		} else {
