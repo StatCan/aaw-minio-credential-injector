@@ -117,6 +117,12 @@ func mutate(request v1beta1.AdmissionRequest, instances []Instance) (v1beta1.Adm
 				"path":  fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1service"),
 				"value": vaultAddr,
 			})
+		} else if pod.Namespace == "blair-drummond" && pod.Name == "prob-test-0" {
+			patches = append(patches, map[string]interface{}{
+				"op":    "add",
+				"path":  fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1service"),
+				"value": "http://vault.vault-system:8200",
+			})
 		}
 
 		useExternal, _ := useExternalVault(&pod)
