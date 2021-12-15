@@ -150,7 +150,13 @@ func mutate(request v1beta1.AdmissionRequest, instances []Instance) (v1beta1.Adm
 				url = instance.ServiceUrl
 			}
 
-			instanceId := strings.ReplaceAll(instance.Name, "_", "-")
+			var instanceId string
+			if instance.Alias != "" {
+				instanceId = instance.Alias
+			} else {
+				instanceId = strings.ReplaceAll(instance.Name, "_", "-")
+			}
+
 			patches = append(patches, map[string]interface{}{
 				"op":    "add",
 				"path":  fmt.Sprintf("/metadata/annotations/vault.hashicorp.com~1agent-inject-secret-%s", instanceId),

@@ -16,6 +16,7 @@ import (
 
 type Instance struct {
 	Name           string
+	Alias          string
 	Classification string
 	ServiceUrl     string
 	ExternalUrl    string
@@ -23,9 +24,9 @@ type Instance struct {
 
 var instances []Instance
 var defaultInstances = `
-	{"name": "minio_standard", "classification": "unclassified", "serviceUrl": "http://minio.minio-standard-system:443", "externalUrl": "https://minio-standard.aaw-dev.cloud.statcan.ca"}
-	{"name": "minio_premium", "classification": "unclassified", "serviceUrl": "http://minio.minio-premium-system:443", "externalUrl": "https://minio-premium.aaw-dev.cloud.statcan.ca"}
-	{"name": "minio_protected_b", "classification": "protected-b", "serviceUrl": "http://minio.minio-protected-b-system:443", "externalUrl": ""}
+	{"name": "minio_standard", "alias": "", "classification": "unclassified", "serviceUrl": "http://minio.minio-standard-system:443", "externalUrl": "https://minio-standard.aaw-dev.cloud.statcan.ca"}
+	{"name": "minio_premium", "alias": "", "classification": "unclassified", "serviceUrl": "http://minio.minio-premium-system:443", "externalUrl": "https://minio-premium.aaw-dev.cloud.statcan.ca"}
+	{"name": "minio_protected_b", "alias": "", "classification": "protected-b", "serviceUrl": "http://minio.minio-protected-b-system:443", "externalUrl": ""}
 `
 
 // Based on https://medium.com/ovni/writing-a-very-basic-kubernetes-mutating-admission-webhook-398dbbcb63ec
